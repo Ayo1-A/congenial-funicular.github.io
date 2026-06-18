@@ -1,0 +1,1888 @@
+
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialPublish Pro — Enterprise Social Publishing Platform</title>
+
+    <!-- SEO Meta Tags Baseline -->
+    <meta name="description" content="An advanced client-side social publishing platform featuring real-time Markdown parsing, custom dynamic Open Graph card creation, and multi-network share telemetry.">
+    <meta property="og:title" content="SocialPublish Pro — Enterprise Social Publishing Platform">
+    <meta property="og:description" content="Publish articles with dynamically rendered rich canvas previews, custom QR codes, and telemetry tracking.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&h=630&q=80">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <!-- CSS/Icons CDNs -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            950: '#022c22',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        serif: ['Playfair Display', 'Georgia', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Heavy-Duty Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Custom styles for rendered Markdown output */
+        .markdown-output h1 { font-size: 1.8em; font-weight: 800; margin-bottom: 0.5em; margin-top: 1em; color: inherit; }
+        .markdown-output h2 { font-size: 1.4em; font-weight: 700; margin-bottom: 0.4em; margin-top: 0.8em; color: inherit; }
+        .markdown-output p { margin-bottom: 1em; line-height: 1.7; color: inherit; }
+        .markdown-output ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .markdown-output ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
+        .markdown-output blockquote { border-left: 4px solid #16a34a; padding-left: 1em; color: #475569; font-style: italic; margin-bottom: 1em; }
+        .dark .markdown-output blockquote { color: #94a3b8; }
+        .markdown-output code { background: #f1f5f9; padding: 0.2em 0.4em; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+        .dark .markdown-output code { background: #1e293b; color: #e2e8f0; }
+        .markdown-output pre { background: #1e293b; color: #f8fafc; padding: 1em; border-radius: 8px; overflow-x: auto; margin-bottom: 1em; }
+        .markdown-output pre code { background: transparent; color: inherit; padding: 0; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Global Application Banner / Alerts -->
+    <div id="global-toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Navigation Header -->
+    <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <a href="#/feed" class="flex items-center space-x-3 group">
+                <div class="w-10 h-10 bg-gradient-to-tr from-brand-600 to-emerald-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md group-hover:scale-105 transition-transform">
+                    S
+                </div>
+                <div>
+                    <span class="font-bold text-lg tracking-tight">Social<span class="text-brand-600 dark:text-brand-500">Publish</span> Pro</span>
+                    <span class="block text-[10px] text-slate-500 dark:text-slate-400 font-medium -mt-1">Dynamic Engine v2.0</span>
+                </div>
+            </a>
+            
+            <nav class="hidden md:flex items-center space-x-1">
+                <a href="#/feed" id="nav-feed" class="px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-500 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-house"></i> Feed
+                </a>
+                <a href="#/bookmarks" id="nav-bookmarks" class="px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-500 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-bookmark"></i> Saved
+                </a>
+                <a href="#/create" id="nav-create" class="px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-500 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-pen-nib"></i> Compose
+                </a>
+                <a href="#/admin" id="nav-admin" class="px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-500 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> System Control
+                </a>
+            </nav>
+
+            <div class="flex items-center gap-3">
+                <button onclick="App.UI.toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand-600 transition" title="Toggle Theme">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+                <a href="#/create" class="bg-brand-600 hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-xs font-bold tracking-wider uppercase shadow-md transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-plus text-xs"></i> Compose
+                </a>
+                <button onclick="App.UI.toggleMobileMenu()" class="md:hidden text-slate-600 dark:text-slate-300 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-xl">
+            <div class="px-4 py-3 space-y-2">
+                <a href="#/feed" onclick="App.UI.toggleMobileMenu()" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Feed</a>
+                <a href="#/bookmarks" onclick="App.UI.toggleMobileMenu()" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Saved Bookmarks</a>
+                <a href="#/create" onclick="App.UI.toggleMobileMenu()" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Compose Article</a>
+                <a href="#/admin" onclick="App.UI.toggleMobileMenu()" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">System Dashboard</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+
+        <!-- ================= FEED VIEW ================= -->
+        <section id="view-feed" class="view hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Sidebar Tools -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Dynamic Profile Card -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5">
+                        <div class="flex items-center gap-4">
+                            <img id="sidebar-profile-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80" alt="Avatar" class="w-14 h-14 rounded-full object-cover ring-2 ring-brand-500">
+                            <div>
+                                <h4 id="sidebar-profile-name" class="font-bold text-sm text-slate-800 dark:text-slate-100">Anonymous Author</h4>
+                                <p id="sidebar-profile-handle" class="text-xs text-slate-400">@writer_pro</p>
+                            </div>
+                        </div>
+                        <p id="sidebar-profile-bio" class="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed italic">"Simplicity is the ultimate sophistication in tech publishing."</p>
+                        <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs">
+                            <span class="text-slate-400">Database Profile Status:</span>
+                            <span class="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 font-bold px-2 py-0.5 rounded text-[10px]">ACTIVE</span>
+                        </div>
+                    </div>
+
+                    <!-- Category and Tag Engine Selection -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5 space-y-4">
+                        <h4 class="font-bold text-xs text-slate-400 uppercase tracking-wider">Publication Channels</h4>
+                        <div class="flex flex-col gap-1.5" id="category-filter-list">
+                            <!-- Dynamic category rendering -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feed Output Desk -->
+                <div class="lg:col-span-3 space-y-4">
+                    <!-- Interactive Search and Order Tool -->
+                    <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                        <div class="relative w-full sm:w-80">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="feed-search" oninput="App.UI.applyFilters()" placeholder="Fuzzy search title, context or tags..." class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <select id="feed-sorting" onchange="App.UI.applyFilters()" class="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto font-medium">
+                                <option value="chronological">Chrono: Latest First</option>
+                                <option value="popular">Engagement Velocity (Likes)</option>
+                                <option value="readtime">Length: Longest First</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Posts Grid -->
+                    <div id="posts-feed-container" class="space-y-6">
+                        <!-- Injected -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= BOOKMARKS VIEW ================= -->
+        <section id="view-bookmarks" class="view hidden space-y-6">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
+                <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-2"><i class="fa-solid fa-bookmark text-brand-600"></i> Local Bookmarked Library</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Articles compiled to client-side sandboxes for quick review and reading offline.</p>
+            </div>
+            <div id="bookmarks-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Bookmarked elements rendered -->
+            </div>
+        </section>
+
+        <!-- ================= CREATE/EDIT POST VIEW ================= -->
+        <section id="view-create" class="view hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Composition Panel -->
+                <div class="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100">Publishing Workspace</h2>
+                            <p class="text-xs text-slate-400">Supports full markdown notation format.</p>
+                        </div>
+                        <div id="draft-autosave-indicator" class="text-[10px] text-slate-400 font-mono italic">
+                            All inputs synchronized.
+                        </div>
+                    </div>
+
+                    <!-- Validation Alerts Block -->
+                    <div id="create-validation-error" class="hidden bg-red-50 dark:bg-red-950/30 border-l-4 border-red-500 p-4 rounded-r-xl text-xs text-red-700 dark:text-red-400"></div>
+
+                    <form id="compose-form" onsubmit="App.Editor.handlePublish(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Post Title</label>
+                                <input type="text" id="post-title" oninput="App.Editor.triggerAutosave(); App.Editor.renderLiveCanvas()" placeholder="Architecture Patterns of Decentralized Frameworks..." class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Channel Channel</label>
+                                <select id="post-category" onchange="App.Editor.triggerAutosave(); App.Editor.renderLiveCanvas()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                    <option value="Architecture">Architecture</option>
+                                    <option value="Cryptography">Cryptography</option>
+                                    <option value="Tutorial">Tutorial</option>
+                                    <option value="Strategic Insights">Strategic Insights</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Document Markdown Text</label>
+                            <textarea id="post-content" rows="10" oninput="App.Editor.triggerAutosave(); App.Editor.renderLiveCanvas()" placeholder="Write your long-form publication content. Markdown formatting is fully supported natively." class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                            <div class="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                                <span>Markdown tags: `# h1`, `## h2`, `**bold**`, `*italic*`, `> quote`</span>
+                                <span id="compose-char-counter">0 / 4000 characters</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Hashtags (comma separated)</label>
+                                <input type="text" id="post-tags" oninput="App.Editor.triggerAutosave()" placeholder="decentralization, protocols, core" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Author Override Attribution</label>
+                                <input type="text" id="post-author" oninput="App.Editor.triggerAutosave(); App.Editor.renderLiveCanvas()" placeholder="Leave empty for profile default" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Cover Image Source URL</label>
+                                <input type="url" id="post-cover" oninput="App.Editor.triggerAutosave()" placeholder="https://images.unsplash.com/..." class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Interactive Call-to-Action Link</label>
+                                <input type="url" id="post-link" oninput="App.Editor.triggerAutosave()" placeholder="https://yourproject.io" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Brand Color Selection & Layout Presets -->
+                        <div class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+                            <h4 class="font-bold text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Sharing Card Layout Engine</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 mb-1 font-semibold">Primary Gradient Tone</label>
+                                    <input type="color" id="post-theme-color" oninput="App.Editor.renderLiveCanvas()" value="#16a34a" class="w-full h-8 rounded border-none cursor-pointer bg-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 mb-1 font-semibold">Background Theme</label>
+                                    <select id="post-theme-preset" onchange="App.Editor.renderLiveCanvas()" class="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[11px]">
+                                        <option value="slate">Sleek Pitch Slate</option>
+                                        <option value="neon">Neon Deep Tech</option>
+                                        <option value="minimal">Editorial Clean Ivory</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" onclick="App.Editor.clearDraft()" class="w-full py-1.5 px-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 rounded text-[11px] font-bold">
+                                        Purge Draft
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                            <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs tracking-wider uppercase shadow-md transition-all">
+                                Publish to Database
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Live Dynamic Metadata Preview Panel -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+                        <h4 class="font-bold text-xs text-slate-400 uppercase tracking-wider mb-3">Live Simulated Card Capture</h4>
+                        <p class="text-[11px] text-slate-400 mb-4 leading-normal">This physical $1200\times630$ px Canvas outputs sharing graphics containing dynamic QR-code tags mapping instantly to the generated publication routes.</p>
+                        
+                        <!-- Offscreen canvas wrapper, visual viewport projection -->
+                        <div class="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow bg-slate-100 dark:bg-slate-950">
+                            <canvas id="live-card-canvas" width="1200" height="630" class="w-full h-auto object-contain"></canvas>
+                        </div>
+
+                        <div class="mt-3 flex justify-between items-center text-[10px] text-slate-400 font-mono">
+                            <span>Dimensions: 1200x630 px</span>
+                            <span>Scale: Dynamic Viewport Fit</span>
+                        </div>
+                    </div>
+
+                    <!-- Layout Instructions -->
+                    <div class="bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl p-5 border border-brand-100 dark:border-brand-950/40 text-xs text-brand-800 dark:text-brand-300 space-y-2">
+                        <h4 class="font-bold uppercase tracking-wide">Developer Architecture Notes</h4>
+                        <p class="leading-relaxed">This card engine parses the user profile database, title strings, reading-time approximations, and generates a client QR code linking directly to the generated URL. The generated canvas outputs standard Base64 files stored directly in client databases for seamless delivery.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= INDIVIDUAL POST PAGE VIEW ================= -->
+        <section id="view-post" class="view hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Main Long-Form Article Column -->
+                <div class="lg:col-span-8 space-y-6">
+                    <div id="full-post-canvas" class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8">
+                        <!-- Post content dynamic injections -->
+                    </div>
+
+                    <!-- Dynamic Comments System -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+                        <h3 class="font-black text-slate-800 dark:text-slate-100 text-lg mb-4 flex items-center gap-2">
+                            <i class="fa-regular fa-comments text-slate-400"></i> Discussion Threads
+                        </h3>
+                        
+                        <form onsubmit="App.UI.submitComment(event)" class="space-y-4 mb-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <input type="text" id="comment-author-name" placeholder="Your Name" class="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none" required>
+                                <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs px-4 py-2 uppercase tracking-wide transition-all self-end">
+                                    Publish Comment
+                                </button>
+                            </div>
+                            <textarea id="comment-body" rows="3" placeholder="Compose a response..." class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none" required></textarea>
+                        </form>
+
+                        <div id="comments-list-wrapper" class="space-y-4 divide-y divide-slate-100 dark:divide-slate-800">
+                            <!-- Injected comments output -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Telemetry & Distribution Sidebar Column -->
+                <div class="lg:col-span-4 space-y-6">
+                    <!-- Distribution Interface Panel -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5 space-y-4">
+                        <h3 class="font-bold text-xs text-slate-400 uppercase tracking-wider">Deploy Card with Dynamic Previews</h3>
+                        
+                        <!-- Rich Card Mock Projector -->
+                        <div class="flex border-b border-slate-100 dark:border-slate-800">
+                            <button onclick="App.UI.switchPreviewPlatform('whatsapp')" id="tab-sim-whatsapp" class="flex-1 py-2 text-center text-xs font-semibold border-b-2 border-brand-500 text-brand-500">WhatsApp</button>
+                            <button onclick="App.UI.switchPreviewPlatform('facebook')" id="tab-sim-facebook" class="flex-1 py-2 text-center text-xs font-semibold border-b-2 border-transparent text-slate-400">Facebook</button>
+                            <button onclick="App.UI.switchPreviewPlatform('twitter')" id="tab-sim-twitter" class="flex-1 py-2 text-center text-xs font-semibold border-b-2 border-transparent text-slate-400">X (Twitter)</button>
+                        </div>
+
+                        <!-- Card Simulator Interface Viewports -->
+                        <div id="simulator-sandbox" class="p-3 bg-slate-100 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                            <!-- Injected by platform -->
+                        </div>
+
+                        <!-- Heavy Share Deployment Elements -->
+                        <div class="space-y-2">
+                            <button onclick="App.UI.triggerModernShare()" class="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2 shadow-md">
+                                <i class="fa-solid fa-share-nodes"></i> Invoke Web Share UI
+                            </button>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="App.UI.triggerLegacyShare('whatsapp')" class="py-2 px-3 bg-[#25D366] text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+                                <button onclick="App.UI.triggerLegacyShare('telegram')" class="py-2 px-3 bg-[#0088cc] text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all"><i class="fa-brands fa-telegram"></i> Telegram</button>
+                                <button onclick="App.UI.triggerLegacyShare('facebook')" class="py-2 px-3 bg-[#1877F2] text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all"><i class="fa-brands fa-facebook"></i> Facebook</button>
+                                <button onclick="App.UI.triggerLegacyShare('twitter')" class="py-2 px-3 bg-[#1DA1F2] text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all"><i class="fa-brands fa-x-twitter"></i> X / Twitter</button>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-100 dark:border-slate-800 pt-3 flex justify-between items-center">
+                            <span class="text-[10px] text-slate-400 font-mono">Dynamic QR-Code Card</span>
+                            <button onclick="App.UI.downloadActiveImage()" class="text-[11px] text-brand-600 hover:underline font-bold"><i class="fa-solid fa-download"></i> Download PNG</button>
+                        </div>
+                    </div>
+
+                    <!-- Discover Other Articles Container -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5 space-y-3">
+                        <h4 class="font-bold text-xs text-slate-400 uppercase tracking-wider">Discover Other Stories</h4>
+                        <div id="related-posts-sidebar-list" class="space-y-3">
+                            <!-- Injected -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= ADMIN / SYSTEM CONTROL VIEW ================= -->
+        <section id="view-admin" class="view hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100">Control & Telemetry Interface</h2>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Configure parameters, customize profile matrices, and export JSON database schema blocks.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="App.Admin.exportDatabase()" class="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-300 transition-all">
+                        <i class="fa-solid fa-file-export"></i> Backup DB (JSON)
+                    </button>
+                    <button onclick="document.getElementById('db-import-input').click()" class="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-300 transition-all">
+                        <i class="fa-solid fa-file-import"></i> Restore DB (JSON)
+                    </button>
+                    <input type="file" id="db-import-input" accept=".json" onchange="App.Admin.importDatabase(event)" class="hidden">
+                    <button onclick="App.Admin.purgeSystem()" class="bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-red-100 transition-all">
+                        <i class="fa-solid fa-trash-can"></i> Flush Memory
+                    </button>
+                </div>
+            </div>
+
+            <!-- Profile Config Desk -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- User profile parameters Form -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5 space-y-4">
+                    <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Creator Profile Customization</h3>
+                    <form onsubmit="App.Admin.updateProfile(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Display Name</label>
+                            <input type="text" id="profile-name-input" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Username Handle</label>
+                            <input type="text" id="profile-handle-input" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Avatar Image URL</label>
+                            <input type="url" id="profile-avatar-input" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Bio Description</label>
+                            <textarea id="profile-bio-input" rows="3" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"></textarea>
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold uppercase transition-all">
+                            Save Profile Changes
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Deep Analytics Panel (ChartJS) -->
+                <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Sharing Velocity & Click-Through Channels</h3>
+                        <p class="text-xs text-slate-400">Computed interaction ratios across tracked social networks.</p>
+                    </div>
+                    <div class="h-64 mt-4">
+                        <canvas id="telemetry-chart-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Central Publications Log & SEO controls -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                    <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Central Publications Moderation Registry</h3>
+                    <button onclick="App.Admin.openSEOModal()" class="text-xs text-brand-600 hover:underline font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-sitemap"></i> View XML Sitemap & SEO schemas
+                    </button>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                        <thead class="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase font-semibold">
+                            <tr>
+                                <th class="px-5 py-3">Article details</th>
+                                <th class="px-5 py-3">Channel</th>
+                                <th class="px-5 py-3 text-center">Stats (Views / Likes)</th>
+                                <th class="px-5 py-3 text-center">Status Filters</th>
+                                <th class="px-5 py-3 text-right">Moderator Controls</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-moderation-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <!-- Injected database rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Advanced SEO Output Modal window -->
+    <div id="seo-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
+            <button onclick="App.Admin.closeSEOModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-100"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-1">Production Metadata and XML schemas</h3>
+            <p class="text-xs text-slate-400 mb-4">Integrate these raw codes into server responses or sitemap root configurations.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Dynamically Generated XML Sitemap</label>
+                    <textarea id="seo-xml-output" rows="5" class="w-full font-mono text-[10px] p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400" readonly></textarea>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Schema.org JSON-LD (Search Optimization)</label>
+                    <textarea id="seo-jsonld-output" rows="5" class="w-full font-mono text-[10px] p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400" readonly></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Offline QR Container (Offscreen rendering target) -->
+    <div id="offscreen-qr" class="hidden"></div>
+
+    <!-- Application Footer -->
+    <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-6 mt-12 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 text-center md:flex md:justify-between md:items-center text-slate-400 text-xs">
+            <p>© 2026 SocialPublish Pro. All-in-one Client Publishing Engine.</p>
+            <p class="mt-2 md:mt-0">Open-source production sandbox. Optimized for WhatsApp, Telegram, and X link preview scraping.</p>
+        </div>
+    </footer>
+
+    <!-- Main JavaScript Logic Block -->
+    <script>
+        // ================= SEED INITIAL DATA =================
+        const INITIAL_POST_DB = [
+            {
+                id: "101",
+                slug: "securing-state-integrity",
+                title: "Decentralized Systems: Securing State Integrity",
+                author: "Sarah Jenkins",
+                content: "# Architectures of Modern Systems\n\nDesigning large-scale state distributions involves maintaining **consistent nodes** and immutable ledgers. It is rarely built on short bursts of high inspiration. Rather, continuous iterative adjustments determine ultimate performance vectors.\n\n### The Security Matrix\n\n1. **Cryptographic Signatures**: Nodes sign states.\n2. **Dynamic Quorum Checking**: Verification via round-robin networks.\n3. **Eventual Convergence**: High fault tolerance mechanisms.\n\n> \"Decentralization is not just an aesthetic; it is a mechanism of high-availability consensus.\"\n\n```javascript\n// Secure Quorum Verification Scheme\nfunction verifyState(block, consensus) {\n    const activeQuorum = consensus.getActiveNodes();\n    return block.signatures.length >= (activeQuorum.length * 2 / 3);\n}\n```",
+                category: "Cryptography",
+                tags: ["systems", "consensus", "cryptography"],
+                coverImage: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80",
+                externalLink: "https://systems-integrity.io",
+                timestamp: Date.now() - 3600000 * 48,
+                likes: 124,
+                comments: [
+                    { author: "Mark S.", text: "This is a great summary of high-availability consensus architectures.", timestamp: Date.now() - 3600000 * 24 }
+                ],
+                shares: { whatsapp: 45, facebook: 22, telegram: 38, twitter: 19, copy: 28 },
+                views: 520,
+                isFeatured: true,
+                isPinned: true,
+                isReported: false,
+                themeColor: "#16a34a",
+                themePreset: "slate",
+                ogImage: ""
+            },
+            {
+                id: "102",
+                slug: "open-graph-deep-dive",
+                title: "Deep Dive: Dynamic Social Engine Previews",
+                author: "Sarah Jenkins",
+                content: "# Mastering Open Graph Crawlers\n\nWhen shared, social platforms use crawler bots that parse HTML header scripts within milliseconds. If tags are missing, search algorithms catalog lower scores and preview visual boxes fail to render.\n\n### Required Header Tags\n\n* `og:title` - Document Headline\n* `og:image` - Dynamic Card Resource link\n* `og:type` - Resource classification (`article`)\n* `twitter:card` - Layout instructions for Twitter feeds",
+                category: "Strategic Insights",
+                tags: ["webdev", "seo", "opengraph"],
+                coverImage: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80",
+                externalLink: "https://ogp.me",
+                timestamp: Date.now() - 3600000 * 12,
+                likes: 85,
+                comments: [],
+                shares: { whatsapp: 12, facebook: 14, telegram: 18, twitter: 32, copy: 14 },
+                views: 341,
+                isFeatured: false,
+                isPinned: false,
+                isReported: false,
+                themeColor: "#3b82f6",
+                themePreset: "neon",
+                ogImage: ""
+            }
+        ];
+
+        const INITIAL_PROFILE = {
+            name: "Sarah Jenkins",
+            handle: "sarah_systems",
+            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80",
+            bio: "Core Architect. Specialized in cryptographically secure network topology, protocol designs, and indexing."
+        };
+
+        // ================= THE MAIN APPLICATION ENGINE =================
+        const App = {
+            state: {
+                posts: [],
+                profile: {},
+                bookmarks: [],
+                activeCategory: "All",
+                activePreviewPlatform: "whatsapp",
+                currentRoutePost: null,
+                theme: "light",
+                autosaveTimer: null
+            },
+
+            init() {
+                // Initialize Database
+                this.Storage.init();
+                
+                // Initialize Router
+                this.Router.init();
+                
+                // Initialize Dark Mode state
+                this.UI.initTheme();
+
+                // Build initial layout configurations
+                this.UI.renderCategoryFilters();
+            },
+
+            // Persistence Module
+            Storage: {
+                init() {
+                    const loadedPosts = localStorage.getItem('social_pub_pro_posts');
+                    const loadedProfile = localStorage.getItem('social_pub_pro_profile');
+                    const loadedBookmarks = localStorage.getItem('social_pub_pro_bookmarks');
+
+                    if (loadedPosts) {
+                        App.state.posts = JSON.parse(loadedPosts);
+                    } else {
+                        App.state.posts = INITIAL_POST_DB;
+                        // Synchronize dynamic covers for the initial layout
+                        App.state.posts.forEach(p => {
+                            if(!p.ogImage) p.ogImage = App.Canvas.renderSynchronously(p);
+                        });
+                        this.savePosts();
+                    }
+
+                    if (loadedProfile) {
+                        App.state.profile = JSON.parse(loadedProfile);
+                    } else {
+                        App.state.profile = INITIAL_PROFILE;
+                        this.saveProfile();
+                    }
+
+                    if (loadedBookmarks) {
+                        App.state.bookmarks = JSON.parse(loadedBookmarks);
+                    } else {
+                        App.state.bookmarks = [];
+                        this.saveBookmarks();
+                    }
+
+                    App.UI.syncSidebarProfile();
+                },
+                savePosts() {
+                    localStorage.setItem('social_pub_pro_posts', JSON.stringify(App.state.posts));
+                },
+                saveProfile() {
+                    localStorage.setItem('social_pub_pro_profile', JSON.stringify(App.state.profile));
+                    App.UI.syncSidebarProfile();
+                },
+                saveBookmarks() {
+                    localStorage.setItem('social_pub_pro_bookmarks', JSON.stringify(App.state.bookmarks));
+                }
+            },
+
+            // Routing System
+            Router: {
+                init() {
+                    window.addEventListener('hashchange', () => this.handleRoute());
+                    this.handleRoute();
+                },
+                handleRoute() {
+                    const hash = window.location.hash || '#/feed';
+                    const views = document.querySelectorAll('.view');
+                    views.forEach(v => v.classList.add('hidden'));
+
+                    // Clear active statuses on navigators
+                    document.querySelectorAll('nav a').forEach(a => a.classList.remove('text-brand-600', 'dark:text-brand-500'));
+
+                    if (hash === '#/feed' || hash === '#/') {
+                        document.getElementById('view-feed').classList.remove('hidden');
+                        document.getElementById('nav-feed').classList.add('text-brand-600', 'dark:text-brand-500');
+                        App.UI.renderFeed();
+                    } else if (hash === '#/bookmarks') {
+                        document.getElementById('view-bookmarks').classList.remove('hidden');
+                        document.getElementById('nav-bookmarks').classList.add('text-brand-600', 'dark:text-brand-500');
+                        App.UI.renderBookmarks();
+                    } else if (hash === '#/create') {
+                        document.getElementById('view-create').classList.remove('hidden');
+                        document.getElementById('nav-create').classList.add('text-brand-600', 'dark:text-brand-500');
+                        App.Editor.loadWorkspace();
+                    } else if (hash.startsWith('#/post/')) {
+                        document.getElementById('view-post').classList.remove('hidden');
+                        const slug = hash.replace('#/post/', '');
+                        App.UI.renderDetailedPost(slug);
+                    } else if (hash === '#/admin') {
+                        document.getElementById('view-admin').classList.remove('hidden');
+                        document.getElementById('nav-admin').classList.add('text-brand-600', 'dark:text-brand-500');
+                        App.Admin.loadDashboard();
+                    } else {
+                        // Fallback route
+                        window.location.hash = '#/feed';
+                    }
+                    window.scrollTo(0, 0);
+                }
+            },
+
+            // Canvas & Dynamic Open Graph Generator
+            Canvas: {
+                renderSynchronously(post, targetCanvasId = null) {
+                    const canvas = targetCanvasId ? document.getElementById(targetCanvasId) : document.createElement('canvas');
+                    canvas.width = 1200;
+                    canvas.height = 630;
+                    const ctx = canvas.getContext('2d');
+                    
+                    const primaryColor = post.themeColor || '#16a34a';
+                    const preset = post.themePreset || 'slate';
+
+                    // 1. Draw Core Background Patterns
+                    if (preset === 'slate') {
+                        // Pitch Slate Styling
+                        ctx.fillStyle = '#0f172a';
+                        ctx.fillRect(0, 0, 1200, 630);
+                        
+                        // Diagonal accent gradient glow
+                        const glow = ctx.createLinearGradient(0, 0, 1200, 630);
+                        glow.addColorStop(0, 'rgba(15, 23, 42, 0.9)');
+                        glow.addColorStop(0.5, 'rgba(30, 41, 59, 0.4)');
+                        glow.addColorStop(1, primaryColor + '4D'); // 30% alpha
+                        ctx.fillStyle = glow;
+                        ctx.fillRect(0, 0, 1200, 630);
+
+                    } else if (preset === 'neon') {
+                        // Futuristic Deep Minimalist theme
+                        ctx.fillStyle = '#020617';
+                        ctx.fillRect(0, 0, 1200, 630);
+                        
+                        // Cyber neon lines
+                        ctx.strokeStyle = primaryColor + '26'; // 15% alpha
+                        ctx.lineWidth = 2;
+                        for (let i = 0; i < 1200; i += 60) {
+                            ctx.beginPath();
+                            ctx.moveTo(i, 0);
+                            ctx.lineTo(i - 200, 630);
+                            ctx.stroke();
+                        }
+                    } else {
+                        // Clean Ivory Theme
+                        ctx.fillStyle = '#f8fafc';
+                        ctx.fillRect(0, 0, 1200, 630);
+                        
+                        ctx.fillStyle = '#f1f5f9';
+                        ctx.fillRect(40, 40, 1120, 550);
+                    }
+
+                    // 2. Add Branding Signatures
+                    ctx.fillStyle = preset === 'minimal' ? '#0f172a' : '#ffffff';
+                    ctx.font = 'bold 32px Inter, system-ui, sans-serif';
+                    ctx.fillText('Social', 100, 110);
+                    
+                    ctx.fillStyle = primaryColor;
+                    ctx.fillText('Publish Pro', 205, 110);
+
+                    // Underline Branding tag
+                    ctx.fillStyle = primaryColor;
+                    ctx.fillRect(100, 130, 210, 4);
+
+                    // 3. Document Category Metadata Tags
+                    ctx.fillStyle = primaryColor + '26'; // background fill
+                    ctx.beginPath();
+                    ctx.roundRect(100, 170, 200, 44, 22);
+                    ctx.fill();
+
+                    ctx.fillStyle = primaryColor;
+                    ctx.font = 'bold 18px Inter, system-ui, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(post.category.toUpperCase(), 200, 198);
+                    ctx.textAlign = 'left'; // reset alignment
+
+                    // 4. Dynamic Read-Time Computation
+                    const charCount = post.content ? post.content.length : 100;
+                    const readTime = Math.max(1, Math.ceil(charCount / 800)); // ~800 chars/min read time
+
+                    ctx.fillStyle = preset === 'minimal' ? '#64748b' : '#94a3b8';
+                    ctx.font = '500 20px Inter, system-ui, sans-serif';
+                    ctx.fillText(`Estimated Reading Time: ${readTime} min · Offline Verified`, 330, 198);
+
+                    // 5. Draw Dynamic Headline
+                    ctx.fillStyle = preset === 'minimal' ? '#0f172a' : '#ffffff';
+                    ctx.font = 'bold 54px Playfair Display, Georgia, serif';
+                    this.wrapText(ctx, post.title || 'Draft Article', 100, 310, 960, 68);
+
+                    // 6. Draw Creator Attribution Footers
+                    ctx.fillStyle = preset === 'minimal' ? '#334155' : '#e2e8f0';
+                    ctx.font = 'bold 22px Inter, system-ui, sans-serif';
+                    ctx.fillText(`WRITER: ${(post.author || App.state.profile.name).toUpperCase()}`, 100, 545);
+
+                    // Draw dynamic custom Offline QR stamp on the bottom-right of sharing canvas
+                    const qrStampImg = document.getElementById('temp-qr-image');
+                    if (qrStampImg) {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath();
+                        ctx.roundRect(1040, 470, 120, 120, 12);
+                        ctx.fill();
+                        ctx.drawImage(qrStampImg, 1050, 480, 100, 100);
+                    } else {
+                        // Drawing static decorative pattern placeholder if offline generators are indexing
+                        ctx.fillStyle = primaryColor;
+                        ctx.fillRect(1080, 490, 60, 60);
+                    }
+
+                    return canvas.toDataURL('image/png');
+                },
+
+                wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+                    const words = text.split(' ');
+                    let line = '';
+                    let currentY = y;
+
+                    for (let n = 0; n < words.length; n++) {
+                        let testLine = line + words[n] + ' ';
+                        let metrics = ctx.measureText(testLine);
+                        let testWidth = metrics.width;
+                        if (testWidth > maxWidth && n > 0) {
+                            ctx.fillText(line, x, currentY);
+                            line = words[n] + ' ';
+                            currentY += lineHeight;
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    ctx.fillText(line, x, currentY);
+                }
+            },
+
+            // Editor Workspace Module
+            Editor: {
+                loadWorkspace() {
+                    const draft = localStorage.getItem('social_pub_pro_draft');
+                    if (draft) {
+                        const d = JSON.parse(draft);
+                        document.getElementById('post-title').value = d.title || '';
+                        document.getElementById('post-content').value = d.content || '';
+                        document.getElementById('post-category').value = d.category || 'Architecture';
+                        document.getElementById('post-tags').value = d.tags || '';
+                        document.getElementById('post-author').value = d.author || '';
+                        document.getElementById('post-cover').value = d.coverImage || '';
+                        document.getElementById('post-link').value = d.externalLink || '';
+                        document.getElementById('post-theme-color').value = d.themeColor || '#16a34a';
+                        document.getElementById('post-theme-preset').value = d.themePreset || 'slate';
+                    } else {
+                        document.getElementById('compose-form').reset();
+                    }
+
+                    document.getElementById('create-validation-error').classList.add('hidden');
+                    this.renderLiveCanvas();
+                },
+
+                triggerAutosave() {
+                    const indicator = document.getElementById('draft-autosave-indicator');
+                    indicator.innerText = "Synchronizing draft...";
+
+                    if (App.state.autosaveTimer) clearTimeout(App.state.autosaveTimer);
+
+                    App.state.autosaveTimer = setTimeout(() => {
+                        const payload = this.gatherFormValues();
+                        localStorage.setItem('social_pub_pro_draft', JSON.stringify(payload));
+                        indicator.innerText = "Draft synchronized.";
+                    }, 800);
+
+                    // Update Character counter live
+                    const len = document.getElementById('post-content').value.length;
+                    document.getElementById('compose-char-counter').innerText = `${len} / 4000 characters`;
+                },
+
+                clearDraft() {
+                    if (confirm("Are you sure you want to clear current draft inputs?")) {
+                        localStorage.removeItem('social_pub_pro_draft');
+                        this.loadWorkspace();
+                        App.UI.showToast("Draft cache purged.", "info");
+                    }
+                },
+
+                gatherFormValues() {
+                    return {
+                        title: document.getElementById('post-title').value.trim(),
+                        content: document.getElementById('post-content').value.trim(),
+                        category: document.getElementById('post-category').value,
+                        tags: document.getElementById('post-tags').value,
+                        author: document.getElementById('post-author').value.trim(),
+                        coverImage: document.getElementById('post-cover').value.trim(),
+                        externalLink: document.getElementById('post-link').value.trim(),
+                        themeColor: document.getElementById('post-theme-color').value,
+                        themePreset: document.getElementById('post-theme-preset').value
+                    };
+                },
+
+                async renderLiveCanvas() {
+                    const form = this.gatherFormValues();
+                    
+                    // Direct dynamic trigger to build offscreen elements for QR codes
+                    const simulatedUrl = `${window.location.origin}${window.location.pathname}#/post/${generateSlug(form.title || 'preview')}`;
+                    
+                    // Compile offscreen QR
+                    const qrDiv = document.getElementById('offscreen-qr');
+                    qrDiv.innerHTML = '';
+                    
+                    new QRCode(qrDiv, {
+                        text: simulatedUrl,
+                        width: 100,
+                        height: 100,
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+
+                    // Ensure library outputs before painting
+                    setTimeout(() => {
+                        const qrImg = qrDiv.querySelector('img');
+                        if (qrImg) {
+                            // Map QR source image to offscreen rendering pipeline
+                            const tempImg = document.createElement('img');
+                            tempImg.id = 'temp-qr-image';
+                            tempImg.src = qrImg.src;
+                            tempImg.onload = () => {
+                                App.Canvas.renderSynchronously(form, 'live-card-canvas');
+                            };
+                        } else {
+                            App.Canvas.renderSynchronously(form, 'live-card-canvas');
+                        }
+                    }, 100);
+                },
+
+                handlePublish(e) {
+                    e.preventDefault();
+                    const formValues = this.gatherFormValues();
+                    const alertBox = document.getElementById('create-validation-error');
+                    alertBox.classList.add('hidden');
+
+                    // Advanced Validation Checks
+                    if (formValues.content.length < 20) {
+                        alertBox.innerText = "Inadequate Article Length: Content must be at least 20 characters of formatted markdown notation.";
+                        alertBox.classList.remove('hidden');
+                        return;
+                    }
+                    if (formValues.content.length > 4000) {
+                        alertBox.innerText = "Threshold Overflow: Main content exceeds maximal limits (4000 characters).";
+                        alertBox.classList.remove('hidden');
+                        return;
+                    }
+
+                    // Content Mitigation / Spam Detection
+                    const forbiddenWords = ["casino", "buy bitcoin", "earn dynamic cash", "cheap pharmacy"];
+                    for (let word of forbiddenWords) {
+                        if (formValues.content.toLowerCase().includes(word) || formValues.title.toLowerCase().includes(word)) {
+                            alertBox.innerText = "Publishing Blocked: Content rejected by automated client filters.";
+                            alertBox.classList.remove('hidden');
+                            return;
+                        }
+                    }
+
+                    const slug = generateSlug(formValues.title || 'untitled-post-' + Date.now());
+                    const generatedId = Date.now().toString();
+
+                    const postPayload = {
+                        id: generatedId,
+                        slug: slug,
+                        title: formValues.title || 'Dynamic Perspective',
+                        author: formValues.author || App.state.profile.name,
+                        content: formValues.content,
+                        category: formValues.category,
+                        tags: formValues.tags.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0),
+                        coverImage: formValues.coverImage,
+                        externalLink: formValues.externalLink,
+                        timestamp: Date.now(),
+                        likes: 0,
+                        comments: [],
+                        shares: { whatsapp: 0, facebook: 0, telegram: 0, twitter: 0, copy: 0 },
+                        views: 1,
+                        isFeatured: false,
+                        isPinned: false,
+                        isReported: false,
+                        themeColor: formValues.themeColor,
+                        themePreset: formValues.themePreset,
+                        ogImage: ""
+                    };
+
+                    // Dynamic sync rendering of standard og card metadata payload
+                    postPayload.ogImage = App.Canvas.renderSynchronously(postPayload);
+
+                    App.state.posts.unshift(postPayload);
+                    App.Storage.savePosts();
+
+                    // Cleanup draft caches
+                    localStorage.removeItem('social_pub_pro_draft');
+                    App.UI.showToast("Article published and registered in client storage matrices.", "success");
+                    window.location.hash = `#/post/${slug}`;
+                }
+            },
+
+            // High-Performance Layout Modules
+            UI: {
+                initTheme() {
+                    const savedTheme = localStorage.getItem('theme') || 'light';
+                    this.setTheme(savedTheme);
+                },
+
+                setTheme(theme) {
+                    App.state.theme = theme;
+                    const root = document.documentElement;
+                    const icon = document.getElementById('theme-icon');
+
+                    if (theme === 'dark') {
+                        root.classList.add('dark');
+                        icon.className = "fa-solid fa-sun";
+                    } else {
+                        root.classList.remove('dark');
+                        icon.className = "fa-solid fa-moon";
+                    }
+                    localStorage.setItem('theme', theme);
+                },
+
+                toggleTheme() {
+                    const next = App.state.theme === 'dark' ? 'light' : 'dark';
+                    this.setTheme(next);
+                },
+
+                toggleMobileMenu() {
+                    document.getElementById('mobile-menu').classList.toggle('hidden');
+                },
+
+                showToast(message, type = "success") {
+                    const container = document.getElementById('global-toast-container');
+                    const toast = document.createElement('div');
+                    toast.className = `flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl text-xs font-bold border pointer-events-auto transition-all duration-300 transform translate-y-4 opacity-0`;
+                    
+                    if (type === 'success') {
+                        toast.className += " bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900";
+                        toast.innerHTML = `<i class="fa-solid fa-circle-check text-base"></i> <span>${message}</span>`;
+                    } else if (type === 'error') {
+                        toast.className += " bg-red-50 dark:bg-red-950 text-red-800 dark:text-red-300 border-red-200 dark:border-red-950";
+                        toast.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-base"></i> <span>${message}</span>`;
+                    } else {
+                        toast.className += " bg-slate-900 text-white border-slate-800";
+                        toast.innerHTML = `<i class="fa-solid fa-circle-info text-base text-brand-500"></i> <span>${message}</span>`;
+                    }
+
+                    container.appendChild(toast);
+                    
+                    setTimeout(() => {
+                        toast.classList.remove('translate-y-4', 'opacity-0');
+                    }, 50);
+
+                    setTimeout(() => {
+                        toast.classList.add('translate-y-4', 'opacity-0');
+                        setTimeout(() => toast.remove(), 300);
+                    }, 4000);
+                },
+
+                syncSidebarProfile() {
+                    const p = App.state.profile;
+                    document.getElementById('sidebar-profile-avatar').src = p.avatar;
+                    document.getElementById('sidebar-profile-name').innerText = p.name;
+                    document.getElementById('sidebar-profile-handle').innerText = `@${p.handle}`;
+                    document.getElementById('sidebar-profile-bio').innerText = `"${p.bio}"`;
+                },
+
+                renderCategoryFilters() {
+                    const list = document.getElementById('category-filter-list');
+                    list.innerHTML = '';
+                    
+                    // Fetch static set + dynamically created categories
+                    const cats = ["All", ...new Set(App.state.posts.map(p => p.category))];
+
+                    cats.forEach(c => {
+                        const btn = document.createElement('button');
+                        btn.onclick = () => {
+                            App.state.activeCategory = c;
+                            this.renderCategoryFilters();
+                            this.renderFeed();
+                        };
+                        
+                        const isActive = App.state.activeCategory === c;
+                        btn.className = `flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl transition-all ${
+                            isActive 
+                            ? 'bg-brand-100 dark:bg-brand-950/50 text-brand-700 dark:text-brand-400 font-bold' 
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                        }`;
+
+                        const count = c === "All" ? App.state.posts.length : App.state.posts.filter(p => p.category === c).length;
+                        btn.innerHTML = `<span>${c}</span> <span class="text-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-1.5 py-0.5 rounded-lg">${count}</span>`;
+                        list.appendChild(btn);
+                    });
+                },
+
+                applyFilters() {
+                    this.renderFeed();
+                },
+
+                getFilteredPosts() {
+                    const query = document.getElementById('feed-search').value.toLowerCase();
+                    const sorting = document.getElementById('feed-sorting').value;
+
+                    let pool = App.state.posts.filter(p => {
+                        if (p.isReported) return false;
+                        
+                        const matchCat = App.state.activeCategory === "All" || p.category === App.state.activeCategory;
+                        const matchQuery = p.title.toLowerCase().includes(query) || 
+                                           p.content.toLowerCase().includes(query) || 
+                                           p.author.toLowerCase().includes(query) ||
+                                           p.tags.some(t => t.includes(query));
+
+                        return matchCat && matchQuery;
+                    });
+
+                    // Execute Sorting Operations
+                    if (sorting === 'popular') {
+                        pool.sort((a, b) => b.likes - a.likes);
+                    } else if (sorting === 'readtime') {
+                        pool.sort((a, b) => b.content.length - a.content.length);
+                    } else {
+                        // Chronological Default - sticky elements stay on top of chronological flow
+                        pool.sort((a, b) => {
+                            if (a.isPinned && !b.isPinned) return -1;
+                            if (!a.isPinned && b.isPinned) return 1;
+                            return b.timestamp - a.timestamp;
+                        });
+                    }
+
+                    return pool;
+                },
+
+                renderFeed() {
+                    const container = document.getElementById('posts-feed-container');
+                    container.innerHTML = '';
+                    const list = this.getFilteredPosts();
+
+                    if (list.length === 0) {
+                        container.innerHTML = `
+                            <div class="bg-white dark:bg-slate-900 p-12 text-center rounded-2xl border border-slate-200 dark:border-slate-800">
+                                <i class="fa-solid fa-signature text-3xl text-slate-300 mb-3"></i>
+                                <h4 class="font-bold text-slate-700 dark:text-slate-300">Workspace Empty</h4>
+                                <p class="text-xs text-slate-400 mt-1">Compose a dynamic article now to compile your first indexes.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    list.forEach(post => {
+                        const card = document.createElement('article');
+                        card.className = `bg-white dark:bg-slate-900 rounded-2xl shadow-sm border p-6 relative transition-all duration-200 hover:shadow-md ${
+                            post.isPinned ? 'border-brand-300 dark:border-brand-900/60 ring-4 ring-brand-50 dark:ring-brand-950/20' : 'border-slate-200 dark:border-slate-800'
+                        }`;
+
+                        const dateStr = new Date(post.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                        const snippet = marked.parse(post.content.split('\n')[0] || ''); // Grab first parsed paragraph
+
+                        const isBookmarked = App.state.bookmarks.some(b => b.id === post.id);
+
+                        card.innerHTML = `
+                            ${post.isPinned ? `<span class="absolute top-4 right-4 bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-400 font-bold text-[10px] px-2.5 py-1 rounded-lg uppercase tracking-wider flex items-center gap-1 border border-brand-200 dark:border-brand-900"><i class="fa-solid fa-thumbtack"></i> Pinned</span>` : ''}
+                            
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs border border-slate-200 dark:border-slate-700">
+                                    ${post.author.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <span class="block text-xs font-bold text-slate-800 dark:text-slate-200">${escapeHtml(post.author)}</span>
+                                    <span class="block text-[10px] text-slate-400 font-semibold">${dateStr} · <span class="text-brand-600 dark:text-brand-400">${post.category}</span></span>
+                                </div>
+                            </div>
+
+                            <h3 class="text-lg font-bold font-serif text-slate-800 dark:text-slate-100 hover:text-brand-600 dark:hover:text-brand-500 transition-colors mb-2">
+                                <a href="#/post/${post.slug || post.id}">${escapeHtml(post.title)}</a>
+                            </h3>
+
+                            <div class="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 mb-4 markdown-output">
+                                ${snippet}
+                            </div>
+
+                            ${post.coverImage ? `
+                                <div class="w-full h-44 rounded-xl overflow-hidden mb-4 border border-slate-100 dark:border-slate-800 shadow-inner">
+                                    <img src="${post.coverImage}" alt="Cover Image" class="w-full h-full object-cover">
+                                </div>
+                            ` : ''}
+
+                            <div class="flex flex-wrap gap-1 mb-4">
+                                ${post.tags.map(t => `<button onclick="App.UI.searchTag('${t}')" class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 hover:text-brand-600 px-2.5 py-1 rounded-full">#${t}</button>`).join('')}
+                            </div>
+
+                            <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4 text-xs text-slate-400 dark:text-slate-500 font-semibold">
+                                <div class="flex items-center gap-4">
+                                    <button onclick="App.UI.likePost('${post.id}')" class="flex items-center gap-1.5 hover:text-red-500 transition-colors">
+                                        <i class="fa-solid fa-heart text-red-500"></i> <span>${post.likes}</span>
+                                    </button>
+                                    <span class="flex items-center gap-1.5">
+                                        <i class="fa-regular fa-comment"></i> <span>${post.comments.length}</span>
+                                    </span>
+                                    <span class="flex items-center gap-1.5">
+                                        <i class="fa-regular fa-eye"></i> <span>${post.views}</span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <button onclick="App.UI.toggleBookmark('${post.id}')" class="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 ${isBookmarked ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}" title="Save to reading library">
+                                        <i class="fa-solid fa-bookmark"></i>
+                                    </button>
+                                    <a href="#/post/${post.slug || post.id}" class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-brand-600 hover:text-white px-3 py-1.5 rounded-xl font-bold uppercase text-[10px] flex items-center gap-1.5 transition-all">
+                                        Engage <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    });
+                },
+
+                renderBookmarks() {
+                    const container = document.getElementById('bookmarks-container');
+                    container.innerHTML = '';
+
+                    if (App.state.bookmarks.length === 0) {
+                        container.innerHTML = `
+                            <div class="col-span-2 bg-white dark:bg-slate-900 p-12 text-center rounded-2xl border border-slate-200 dark:border-slate-800">
+                                <i class="fa-solid fa-bookmark text-3xl text-slate-300 mb-3"></i>
+                                <h4 class="font-bold text-slate-700 dark:text-slate-300">No Bookmarks Saved</h4>
+                                <p class="text-xs text-slate-400 mt-1">Bookmark articles to review offline.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    App.state.bookmarks.forEach(post => {
+                        const card = document.createElement('div');
+                        card.className = "bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between";
+                        card.innerHTML = `
+                            <div>
+                                <span class="text-[9px] font-bold text-brand-600 uppercase tracking-widest block mb-1">${post.category}</span>
+                                <h3 class="font-bold text-base text-slate-800 dark:text-slate-100 leading-snug"><a href="#/post/${post.slug}">${escapeHtml(post.title)}</a></h3>
+                                <p class="text-xs text-slate-400 mt-1">Published by ${post.author}</p>
+                            </div>
+                            <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3 mt-4">
+                                <button onclick="App.UI.toggleBookmark('${post.id}')" class="text-xs text-red-600 hover:underline font-bold">Remove Bookmark</button>
+                                <a href="#/post/${post.slug}" class="text-xs text-brand-600 hover:underline font-bold flex items-center gap-1">Open <i class="fa-solid fa-arrow-right"></i></a>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    });
+                },
+
+                searchTag(t) {
+                    document.getElementById('feed-search').value = t;
+                    this.applyFilters();
+                },
+
+                likePost(id) {
+                    const post = App.state.posts.find(p => p.id === id);
+                    if (post) {
+                        post.likes += 1;
+                        App.Storage.savePosts();
+                        this.renderFeed();
+                        this.showToast("Likes count incremented.");
+                    }
+                },
+
+                toggleBookmark(id) {
+                    const index = App.state.bookmarks.findIndex(b => b.id === id);
+                    if (index > -1) {
+                        App.state.bookmarks.splice(index, 1);
+                        this.showToast("Removed from bookmarked directory.", "info");
+                    } else {
+                        const post = App.state.posts.find(p => p.id === id);
+                        if (post) {
+                            App.state.bookmarks.push(post);
+                            this.showToast("Archived to bookmarked directory.", "success");
+                        }
+                    }
+                    App.Storage.saveBookmarks();
+                    this.renderFeed();
+                    this.renderBookmarks();
+                },
+
+                renderDetailedPost(slug) {
+                    const post = App.state.posts.find(p => p.slug === slug || p.id === slug);
+                    if (!post) {
+                        document.getElementById('full-post-canvas').innerHTML = `
+                            <div class="text-center py-12">
+                                <i class="fa-solid fa-file-circle-exclamation text-3xl text-red-500 mb-3"></i>
+                                <h3 class="font-bold text-slate-800 dark:text-slate-100">Index Record Absent</h3>
+                                <p class="text-xs text-slate-400 mt-1">This publication profile may have expired or been purged from local database matrices.</p>
+                                <a href="#/feed" class="mt-4 inline-block bg-brand-600 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase">Back to feed</a>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    // Increment dynamic traffic views metrics
+                    post.views += 1;
+                    App.Storage.savePosts();
+
+                    App.state.currentRoutePost = post;
+
+                    // Compile Dynamic Schema structures dynamically to verify Search console indexes
+                    this.injectSEOMetadataTags(post);
+
+                    const dateStr = new Date(post.timestamp).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+                    const contentHtml = marked.parse(post.content);
+
+                    const el = document.getElementById('full-post-canvas');
+                    el.innerHTML = `
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5 mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center font-bold text-sm border border-slate-200 dark:border-slate-700">
+                                    ${post.author.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <span class="block text-sm font-bold text-slate-800 dark:text-slate-100">${escapeHtml(post.author)}</span>
+                                    <span class="block text-xs text-slate-400 font-semibold">${dateStr} · <span class="text-brand-600 dark:text-brand-400">${post.category}</span></span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="App.UI.toggleBookmark('${post.id}')" class="px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all">
+                                    <i class="fa-solid fa-bookmark"></i> Read Later
+                                </button>
+                                <button onclick="App.UI.flagPost('${post.id}')" class="p-2 text-slate-300 hover:text-red-600 rounded-xl" title="Report Publication">
+                                    <i class="fa-solid fa-flag"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <h1 class="text-2xl md:text-4xl font-bold font-serif text-slate-900 dark:text-slate-50 leading-tight mb-5">${escapeHtml(post.title)}</h1>
+
+                        ${post.coverImage ? `
+                            <div class="w-full h-64 md:h-96 rounded-2xl overflow-hidden mb-6 border border-slate-200 dark:border-slate-800 shadow-md">
+                                <img src="${post.coverImage}" alt="Cover Graphic" class="w-full h-full object-cover">
+                            </div>
+                        ` : ''}
+
+                        <div class="markdown-output text-slate-700 dark:text-slate-300 text-sm md:text-base leading-relaxed mb-6">
+                            ${contentHtml}
+                        </div>
+
+                        ${post.externalLink ? `
+                            <div class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between mb-6">
+                                <div class="truncate pr-4">
+                                    <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Project URL</span>
+                                    <a href="${post.externalLink}" target="_blank" rel="noopener" class="text-xs text-brand-600 hover:underline font-bold break-all">${post.externalLink}</a>
+                                </div>
+                                <i class="fa-solid fa-arrow-up-right-from-square text-slate-400"></i>
+                            </div>
+                        ` : ''}
+
+                        <div class="flex flex-wrap gap-1.5 mb-6">
+                            ${post.tags.map(t => `<span class="text-xs font-semibold text-slate-500 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800">#${t}</span>`).join('')}
+                        </div>
+
+                        <div class="border-t border-slate-100 dark:border-slate-800 pt-5 flex justify-between items-center text-xs text-slate-400 font-semibold">
+                            <button onclick="App.UI.likePostFromDetails('${post.id}')" class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl hover:text-red-500 transition-all">
+                                <i class="fa-solid fa-heart text-red-500"></i> <span id="details-like-counter-val">${post.likes} reactions</span>
+                            </button>
+                            <span>Traffic: ${post.views} hits index</span>
+                        </div>
+                    `;
+
+                    this.updateSimulatorUI(post);
+                    this.renderCommentsList(post);
+                    this.renderRelatedPosts(post);
+                },
+
+                likePostFromDetails(id) {
+                    const post = App.state.posts.find(p => p.id === id);
+                    if(post) {
+                        post.likes += 1;
+                        App.Storage.savePosts();
+                        document.getElementById('details-like-counter-val').innerText = `${post.likes} reactions`;
+                        this.showToast("Reaction mapped.");
+                    }
+                },
+
+                flagPost(id) {
+                    if (confirm("Report this publication to system administrators for review?")) {
+                        const post = App.state.posts.find(p => p.id === id);
+                        if (post) {
+                            post.isReported = true;
+                            App.Storage.savePosts();
+                            this.showToast("Article flagged and dynamic router links severed.", "error");
+                            window.location.hash = '#/feed';
+                        }
+                    }
+                },
+
+                injectSEOMetadataTags(post) {
+                    // Inject programmatic SEO elements inside HEAD block dynamically
+                    document.title = `${post.title} | SocialPublish Pro`;
+                    
+                    const canonical = `${window.location.origin}${window.location.pathname}#/post/${post.slug}`;
+                    
+                    // Client meta changes to replicate crawler states
+                    document.querySelector('meta[property="og:title"]').setAttribute('content', post.title);
+                    document.querySelector('meta[property="og:image"]').setAttribute('content', post.ogImage || post.coverImage);
+                },
+
+                updateSimulatorUI(post) {
+                    const box = document.getElementById('simulator-sandbox');
+                    const img = post.ogImage || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&h=630&q=80';
+                    const mockUrl = `https://socialpublish.pro/post/${post.slug}`;
+                    const textSnippet = post.content.substring(0, 120) + '...';
+
+                    if (App.state.activePreviewPlatform === 'whatsapp') {
+                        box.innerHTML = `
+                            <div class="bg-[#e5ddd5] dark:bg-slate-900 p-3 rounded-xl max-w-sm mx-auto shadow border border-slate-200 dark:border-slate-800">
+                                <div class="bg-emerald-100 dark:bg-emerald-950/40 p-2.5 rounded-lg text-slate-800 dark:text-slate-200 text-xs leading-normal">
+                                    Check out this post: <br><strong>"${escapeHtml(post.title)}"</strong><br><br>
+                                    Read more: <span class="text-blue-600 underline">${mockUrl}</span>
+                                </div>
+                                <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden mt-2">
+                                    <img src="${img}" class="w-full h-36 object-cover">
+                                    <div class="p-2.5">
+                                        <h4 class="font-bold text-[11px] text-slate-800 dark:text-slate-100">${escapeHtml(post.title)}</h4>
+                                        <p class="text-[10px] text-slate-400 line-clamp-2 mt-1">${textSnippet}</p>
+                                        <span class="text-[9px] text-slate-300 block mt-1">socialpublish.pro</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (App.state.activePreviewPlatform === 'facebook') {
+                        box.innerHTML = `
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow max-w-sm mx-auto">
+                                <div class="p-3 flex items-center gap-2 border-b border-slate-50 dark:border-slate-800">
+                                    <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 font-bold flex items-center justify-center text-xs">A</div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200">System Agent</h4>
+                                        <span class="text-[9px] text-slate-400 block -mt-0.5">Just now · Public</span>
+                                    </div>
+                                </div>
+                                <img src="${img}" class="w-full h-40 object-cover">
+                                <div class="p-3 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800">
+                                    <span class="text-[9px] text-slate-400 uppercase tracking-widest block">SOCIALPUBLISH.PRO</span>
+                                    <h4 class="font-bold text-xs text-slate-800 dark:text-slate-200 mt-1 truncate">${escapeHtml(post.title)}</h4>
+                                    <p class="text-[10px] text-slate-400 line-clamp-2 mt-0.5">${textSnippet}</p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Twitter Card UI mock
+                        box.innerHTML = `
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow max-w-sm mx-auto">
+                                <img src="${img}" class="w-full h-40 object-cover">
+                                <div class="p-3 border-t border-slate-100 dark:border-slate-800">
+                                    <span class="text-[9px] text-slate-400 block uppercase">socialpublish.pro</span>
+                                    <h4 class="font-bold text-xs text-slate-800 dark:text-slate-100 mt-1 truncate">${escapeHtml(post.title)}</h4>
+                                    <p class="text-[10px] text-slate-400 line-clamp-2 mt-0.5">${textSnippet}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                },
+
+                switchPreviewPlatform(platform) {
+                    App.state.activePreviewPlatform = platform;
+                    const platforms = ["whatsapp", "facebook", "twitter"];
+                    platforms.forEach(p => {
+                        const el = document.getElementById(`tab-sim-${p}`);
+                        if (p === platform) {
+                            el.classList.add('border-brand-500', 'text-brand-500');
+                            el.classList.remove('border-transparent', 'text-slate-400');
+                        } else {
+                            el.classList.remove('border-brand-500', 'text-brand-500');
+                            el.classList.add('border-transparent', 'text-slate-400');
+                        }
+                    });
+                    this.updateSimulatorUI(App.state.currentRoutePost);
+                },
+
+                triggerModernShare() {
+                    const post = App.state.currentRoutePost;
+                    if (!post) return;
+
+                    const shareUrl = `${window.location.origin}${window.location.pathname}#/post/${post.slug}`;
+                    
+                    if (navigator.share) {
+                        navigator.share({
+                            title: post.title,
+                            text: `Read "${post.title}" on SocialPublish Pro!`,
+                            url: shareUrl
+                        }).then(() => {
+                            post.shares.whatsapp += 1; // standard general logged increment
+                            App.Storage.savePosts();
+                            this.showToast("Universal device sharing window triggered successfully.");
+                        }).catch(err => {
+                            this.showToast("Sharing window aborted.", "error");
+                        });
+                    } else {
+                        // Fallback automatically to system link duplication
+                        navigator.clipboard.writeText(shareUrl).then(() => {
+                            post.shares.copy += 1;
+                            App.Storage.savePosts();
+                            this.showToast("Share API not supported. Deep article link copied to clipboard.", "info");
+                        });
+                    }
+                },
+
+                triggerLegacyShare(platform) {
+                    const post = App.state.currentRoutePost;
+                    if (!post) return;
+
+                    post.shares[platform] += 1;
+                    App.Storage.savePosts();
+
+                    const shareUrl = `${window.location.origin}${window.location.pathname}#/post/${post.slug}`;
+                    const shareText = `Check out this article: "${post.title}"\n\nRead more at: ${shareUrl}`;
+
+                    let url = '';
+                    if (platform === 'whatsapp') {
+                        url = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+                    } else if (platform === 'facebook') {
+                        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+                    } else if (platform === 'telegram') {
+                        url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(post.title)}`;
+                    } else if (platform === 'twitter') {
+                        url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+                    }
+
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                    this.showToast(`Logged dynamic ${platform} sharing trigger.`);
+                },
+
+                downloadActiveImage() {
+                    const post = App.state.currentRoutePost;
+                    if (post && post.ogImage) {
+                        const dl = document.createElement('a');
+                        dl.download = `og-card-${post.slug}.png`;
+                        dl.href = post.ogImage;
+                        dl.click();
+                        this.showToast("Downloading dynamic 1200x630 metadata canvas map.");
+                    }
+                },
+
+                renderCommentsList(post) {
+                    const box = document.getElementById('comments-list-wrapper');
+                    box.innerHTML = '';
+
+                    if(post.comments.length === 0) {
+                        box.innerHTML = `<p class="text-xs text-slate-400 py-6 text-center">No community responses written yet. Be the first to start the thread.</p>`;
+                        return;
+                    }
+
+                    post.comments.forEach(c => {
+                        const el = document.createElement('div');
+                        el.className = "py-4 text-xs space-y-1.5";
+                        el.innerHTML = `
+                            <div class="flex justify-between items-center text-slate-400 font-semibold">
+                                <strong class="text-slate-800 dark:text-slate-200">${escapeHtml(c.author)}</strong>
+                                <span>${new Date(c.timestamp).toLocaleDateString()}</span>
+                            </div>
+                            <p class="text-slate-600 dark:text-slate-400 leading-relaxed">${escapeHtml(c.text)}</p>
+                        `;
+                        box.appendChild(el);
+                    });
+                },
+
+                submitComment(e) {
+                    e.preventDefault();
+                    const authorInput = document.getElementById('comment-author-name');
+                    const bodyInput = document.getElementById('comment-body');
+                    const post = App.state.currentRoutePost;
+
+                    if (post && authorInput.value.trim() && bodyInput.value.trim()) {
+                        post.comments.push({
+                            author: authorInput.value.trim(),
+                            text: bodyInput.value.trim(),
+                            timestamp: Date.now()
+                        });
+                        App.Storage.savePosts();
+                        this.renderCommentsList(post);
+                        
+                        // Reset forms
+                        bodyInput.value = '';
+                        this.showToast("Comment published to local database array.");
+                    }
+                },
+
+                renderRelatedPosts(post) {
+                    const container = document.getElementById('related-posts-sidebar-list');
+                    container.innerHTML = '';
+
+                    const matching = App.state.posts.filter(p => p.id !== post.id && p.category === post.category && !p.isReported).slice(0, 3);
+                    const pool = matching.length > 0 ? matching : App.state.posts.filter(p => p.id !== post.id && !p.isReported).slice(0, 3);
+
+                    if (pool.length === 0) {
+                        container.innerHTML = `<p class="text-xs text-slate-400">No other publications indexed in this workspace.</p>`;
+                        return;
+                    }
+
+                    pool.forEach(p => {
+                        const item = document.createElement('a');
+                        item.href = `#/post/${p.slug}`;
+                        item.className = "block p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all";
+                        item.innerHTML = `
+                            <span class="text-[9px] font-bold text-brand-600 uppercase tracking-widest">${p.category}</span>
+                            <h5 class="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-1 mt-0.5">${escapeHtml(p.title)}</h5>
+                            <span class="text-[10px] text-slate-400 block mt-1">Authored by ${escapeHtml(p.author)}</span>
+                        `;
+                        container.appendChild(item);
+                    });
+                }
+            },
+
+            // Administrative Dashboard / Controlling Workspace
+            Admin: {
+                telemetryChart: null,
+
+                loadDashboard() {
+                    // Prepopulate Profile setup
+                    const p = App.state.profile;
+                    document.getElementById('profile-name-input').value = p.name;
+                    document.getElementById('profile-handle-input').value = p.handle;
+                    document.getElementById('profile-avatar-input').value = p.avatar;
+                    document.getElementById('profile-bio-input').value = p.bio;
+
+                    this.renderModerationTable();
+                    this.initChart();
+                },
+
+                updateProfile(e) {
+                    e.preventDefault();
+                    App.state.profile.name = document.getElementById('profile-name-input').value.trim();
+                    App.state.profile.handle = document.getElementById('profile-handle-input').value.trim();
+                    App.state.profile.avatar = document.getElementById('profile-avatar-input').value.trim();
+                    App.state.profile.bio = document.getElementById('profile-bio-input').value.trim();
+
+                    App.Storage.saveProfile();
+                    App.UI.showToast("System user profile catalog updated successfully.");
+                },
+
+                renderModerationTable() {
+                    const body = document.getElementById('admin-moderation-table-body');
+                    body.innerHTML = '';
+
+                    App.state.posts.forEach(post => {
+                        const tr = document.createElement('tr');
+                        tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800";
+
+                        const sharesSum = Object.values(post.shares).reduce((a, b) => a + b, 0);
+
+                        tr.innerHTML = `
+                            <td class="px-5 py-4">
+                                <div class="font-bold text-slate-800 dark:text-slate-200 truncate max-w-xs">${escapeHtml(post.title)}</div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">Slug: /post/${post.slug} · ID: ${post.id}</div>
+                            </td>
+                            <td class="px-5 py-4 font-bold text-slate-500">${post.category}</td>
+                            <td class="px-5 py-4 text-center">
+                                <div class="font-bold text-slate-800 dark:text-slate-200">Views: ${post.views}</div>
+                                <div class="text-[10px] text-slate-400">Likes: ${post.likes} · Shared: ${sharesSum}</div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="flex flex-col gap-1 items-center">
+                                    ${post.isPinned ? '<span class="bg-blue-50 text-blue-700 border border-blue-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">PINNED</span>' : ''}
+                                    ${post.isFeatured ? '<span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">FEATURED</span>' : ''}
+                                    ${post.isReported ? '<span class="bg-red-50 text-red-700 border border-red-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase animate-pulse">REPORTED</span>' : ''}
+                                    ${(!post.isPinned && !post.isFeatured && !post.isReported) ? '<span class="bg-slate-50 text-slate-400 border border-slate-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">STANDARD</span>' : ''}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4 text-right space-y-1.5">
+                                <div class="flex items-center justify-end gap-1">
+                                    <button onclick="App.Admin.toggleFeature('${post.id}')" class="px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 transition-all">Feature</button>
+                                    <button onclick="App.Admin.togglePin('${post.id}')" class="px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 transition-all">Pin</button>
+                                </div>
+                                <div class="flex items-center justify-end gap-1">
+                                    <button onclick="App.Admin.deletePost('${post.id}')" class="px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 hover:bg-red-100 transition-all"><i class="fa-solid fa-trash-can"></i> Kill</button>
+                                    ${post.isReported ? `<button onclick="App.Admin.resolveReport('${post.id}')" class="px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition-all">Clear Flag</button>` : ''}
+                                </div>
+                            </td>
+                        `;
+                        body.appendChild(tr);
+                    });
+                },
+
+                toggleFeature(id) {
+                    const post = App.state.posts.find(p => p.id === id);
+                    if (post) {
+                        post.isFeatured = !post.isFeatured;
+                        App.Storage.savePosts();
+                        this.renderModerationTable();
+                        App.UI.showToast("Featured state updated.");
+                    }
+                },
+
+                togglePin(id) {
+                    const post = App.state.posts.find(p => p.id === id);
+                    if (post) {
+                        post.isPinned = !post.isPinned;
+                        App.Storage.savePosts();
+                        this.renderModerationTable();
+                        App.UI.showToast("Sticky pinning state toggled.");
+                    }
+                },
+
+                deletePost(id) {
+                    if (confirm("Delete this publication permanent from client storage indexes?")) {
+                        App.state.posts = App.state.posts.filter(p => p.id !== id);
+                        App.Storage.savePosts();
+                        this.renderModerationTable();
+                        this.initChart();
+                        App.UI.showToast("Article deleted.", "info");
+                    }
+                },
+
+                resolveReport(id) {
+                    const post = App.state.posts.find(p => p.id === id);
+                    if (post) {
+                        post.isReported = false;
+                        App.Storage.savePosts();
+                        this.renderModerationTable();
+                        App.UI.showToast("Cleared report flag.", "success");
+                    }
+                },
+
+                initChart() {
+                    let wa = 0, fb = 0, tg = 0, tw = 0, cp = 0;
+                    App.state.posts.forEach(p => {
+                        wa += p.shares.whatsapp;
+                        fb += p.shares.facebook;
+                        tg += p.shares.telegram;
+                        tw += p.shares.twitter;
+                        cp += p.shares.copy;
+                    });
+
+                    const ctx = document.getElementById('telemetry-chart-canvas').getContext('2d');
+                    if (this.telemetryChart) this.telemetryChart.destroy();
+
+                    this.telemetryChart = new Chart(ctx, {
+                        type: 'radar',
+                        data: {
+                            labels: ['WhatsApp Sharing', 'Facebook Feeds', 'Telegram Broadcasts', 'X (Twitter)', 'Direct Link Copy'],
+                            datasets: [{
+                                label: 'Distribution Telemetry Count',
+                                data: [wa, fb, tg, tw, cp],
+                                backgroundColor: 'rgba(22, 197, 94, 0.2)',
+                                borderColor: '#16a34a',
+                                borderWidth: 2,
+                                pointBackgroundColor: '#15803d'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                r: {
+                                    angleLines: { display: true },
+                                    suggestedMin: 0
+                                }
+                            }
+                        }
+                    });
+                },
+
+                exportDatabase() {
+                    const dbStr = JSON.stringify({
+                        posts: App.state.posts,
+                        profile: App.state.profile,
+                        bookmarks: App.state.bookmarks
+                    }, null, 2);
+
+                    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dbStr);
+                    const dl = document.createElement('a');
+                    dl.download = `social-publish-db-backup-${Date.now()}.json`;
+                    dl.href = dataUri;
+                    dl.click();
+                    App.UI.showToast("Backup schema successfully generated.");
+                },
+
+                importDatabase(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const parsed = JSON.parse(event.target.result);
+                            if (parsed.posts && parsed.profile) {
+                                App.state.posts = parsed.posts;
+                                App.state.profile = parsed.profile;
+                                App.state.bookmarks = parsed.bookmarks || [];
+
+                                App.Storage.savePosts();
+                                App.Storage.saveProfile();
+                                App.Storage.saveBookmarks();
+
+                                this.loadDashboard();
+                                App.UI.showToast("Database restore finalized successfully.", "success");
+                            } else {
+                                App.UI.showToast("Database format invalid.", "error");
+                            }
+                        } catch (err) {
+                            App.UI.showToast("Error parsing database file.", "error");
+                        }
+                    };
+                    reader.readAsText(file);
+                },
+
+                purgeSystem() {
+                    if (confirm("Flush all posts and restore initial default sandbox values? This action is irreversible.")) {
+                        localStorage.clear();
+                        App.state.posts = INITIAL_POST_DB;
+                        App.state.posts.forEach(p => p.ogImage = App.Canvas.renderSynchronously(p));
+                        App.state.profile = INITIAL_PROFILE;
+                        App.state.bookmarks = [];
+
+                        App.Storage.savePosts();
+                        App.Storage.saveProfile();
+                        App.Storage.saveBookmarks();
+
+                        App.Router.handleRoute();
+                        App.UI.showToast("Memory storage flushed to baseline values.", "info");
+                    }
+                },
+
+                openSEOModal() {
+                    const base = "https://socialpublish.pro/post/";
+                    
+                    // 1. Compile Sitemap Schema xml
+                    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+                    xml += `  <url>\n    <loc>https://socialpublish.pro/</loc>\n    <priority>1.00</priority>\n  </url>\n`;
+                    App.state.posts.forEach(p => {
+                        if (!p.isReported) {
+                            xml += `  <url>\n    <loc>${base}${p.slug}</loc>\n    <lastmod>${new Date(p.timestamp).toISOString().split('T')[0]}</lastmod>\n    <priority>0.80</priority>\n  </url>\n`;
+                        }
+                    });
+                    xml += `</urlset>`;
+                    document.getElementById('seo-xml-output').value = xml;
+
+                    // 2. Compile Dynamic JSON-LD structures
+                    let jsonld = {
+                        "@context": "https://schema.org",
+                        "@type": "BlogPosting",
+                        "headline": App.state.currentRoutePost ? App.state.currentRoutePost.title : "SocialPublish Pro Article Repository",
+                        "author": {
+                            "@type": "Person",
+                            "name": App.state.currentRoutePost ? App.state.currentRoutePost.author : App.state.profile.name
+                        },
+                        "publisher": {
+                            "@type": "Organization",
+                            "name": "SocialPublish Pro",
+                            "logo": {
+                                "@type": "ImageObject",
+                                "url": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&h=630&q=80"
+                            }
+                        }
+                    };
+                    document.getElementById('seo-jsonld-output').value = JSON.stringify(jsonld, null, 2);
+
+                    document.getElementById('seo-modal').classList.remove('hidden');
+                },
+
+                closeSEOModal() {
+                    document.getElementById('seo-modal').classList.add('hidden');
+                }
+            }
+        };
+
+        // ================= GLOBAL HELPER ENGINES =================
+        function generateSlug(text) {
+            return text.toString().toLowerCase()
+                .replace(/\s+/g, '-')           
+                .replace(/[^\w\-]+/g, '')       
+                .replace(/\-\-+/g, '-')         
+                .replace(/^-+/, '')             
+                .replace(/-+$/, '');            
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, (m) => map[m]);
+        }
+
+        // Run application
+        App.init();
+    </script>
+</body>
+</html>
